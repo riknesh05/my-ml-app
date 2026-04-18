@@ -397,28 +397,45 @@
     runBtn.disabled = !(fileSelected && selectedModel);
   }
 
-  function runModel() {
-    const resultCard = document.getElementById('resultCard');
-    const loadingBar = document.getElementById('loadingBar');
-    const mockGraph = document.getElementById('mockGraph');
-    const resultLabel = document.getElementById('resultLabel');
+ async function runModel() {
+  const resultCard = document.getElementById('resultCard');
+  const loadingBar = document.getElementById('loadingBar');
+  const mockGraph = document.getElementById('mockGraph');
+  const resultLabel = document.getElementById('resultLabel');
 
-    resultCard.classList.add('visible');
-    loadingBar.classList.add('active');
-    mockGraph.style.opacity = '0.3';
-    runBtn.disabled = true;
-    runBtn.textContent = '⏳ Training...';
-    resultLabel.textContent = `// Training ${selectedModel.replace('_',' ')}...`;
+  resultCard.classList.add('visible');
+  loadingBar.classList.add('active');
+  mockGraph.style.opacity = '0.3';
+  runBtn.disabled = true;
+  runBtn.textContent = '⏳ Training...';
+  resultLabel.textContent = `// Training ${selectedModel.replace(/_/g,' ')}...`;
 
-    // Simulate API call — replace with real fetch() to your backend
-    setTimeout(() => {
-      loadingBar.classList.remove('active');
-      mockGraph.style.opacity = '1';
-      runBtn.disabled = false;
-      runBtn.textContent = '▶ Run Model';
-      resultLabel.textContent = `// ✅ ${selectedModel.replace(/_/g,' ')} — Output`;
-    }, 2500);
+  try {
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+    formData.append("model", selectedModel);
+
+    const res = await fetch("https://5000-m-s-kkb-use1d2-1oiiio54po959-d.us-east1-2.prod.colab.dev/predict", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    // Show the returned graph image
+    mockGraph.innerHTML = `<img src="data:image/png;base64,${data.image}" style="width:100%;border-radius:8px;">`;
+    mockGraph.style.opacity = '1';
+    resultLabel.textContent = `// ✅ ${selectedModel.replace(/_/g,' ')} — Output`;
+
+  } catch (err) {
+    mockGraph.innerHTML = `<p style="color:#ff6b6b;font-family:monospace;font-size:0.8rem;">❌ Error: ${err.message}</p>`;
+    mockGraph.style.opacity = '1';
   }
+
+  loadingBar.classList.remove('active');
+  runBtn.disabled = false;
+  runBtn.textContent = '▶ Run Model';
+}
 </script>
 </body>
 </html>
